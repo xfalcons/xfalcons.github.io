@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
+<meta name="theme-color" content="#414852"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inconsolata|Lato|Itim|Lobster"><link rel="stylesheet" href="/css/main.css?v=1.5.0">
+  
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico?v=1.5.0">
+
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '1.5.0',
+    sidebar: {},
+    scroll: {
+      save: 'false'
+    }
+  };
+</script>
+  <meta name="description" content="PurposeA redirect server for logging is used to trace various urls user clicked. The redirect server will log any query parameters in url and redirect to url parameter finally. The logging should be d">
+<meta name="keywords" content="openresty logging kafka">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OpenResty as redirect server for logging sent to Kafka">
+<meta property="og:url" content="https:&#x2F;&#x2F;xfalcons.github.io&#x2F;2019&#x2F;11&#x2F;08&#x2F;OpenResty-as-redirect-server-for-logging-sent-to-Kafka&#x2F;index.html">
+<meta property="og:site_name" content="Xfalcons 覺旅">
+<meta property="og:description" content="PurposeA redirect server for logging is used to trace various urls user clicked. The redirect server will log any query parameters in url and redirect to url parameter finally. The logging should be d">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https:&#x2F;&#x2F;xfalcons.github.io&#x2F;2019&#x2F;11&#x2F;08&#x2F;OpenResty-as-redirect-server-for-logging-sent-to-Kafka&#x2F;openresty-nginx-lua.png">
+<meta property="og:image" content="http:&#x2F;&#x2F;www.plantuml.com&#x2F;plantuml&#x2F;svg&#x2F;LOqn3i8m40HxlsALFXz8aGOwEaSyuB0lS4gm8_iIyNniGvDkjREQVObdp37g8twC8QSneRjdJXqeemQpKL9nib5GTDPZudJykVLdUgDveKPQEiChPvL0AZ5W4kMsgwKnzQSVYtl0PHMtO4-hiRuVVvwXV0QFD-TCJuP6B4tV5jKmmBANn4wn5rLT5CCN">
+<meta property="og:updated_time" content="2019-11-08T07:19:19.837Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https:&#x2F;&#x2F;xfalcons.github.io&#x2F;2019&#x2F;11&#x2F;08&#x2F;OpenResty-as-redirect-server-for-logging-sent-to-Kafka&#x2F;openresty-nginx-lua.png"><link rel="canonical" href="https://xfalcons.github.io/2019/11/08/OpenResty-as-redirect-server-for-logging-sent-to-Kafka/">  
+<title>OpenResty as redirect server for logging sent to Kafka | Xfalcons 覺旅</title>
+  
+  <script src="//cdn.jsdelivr.net/npm/pace-js@1/pace.min.js"></script>
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/pace-js@1/themes/blue/pace-theme-minimal.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.11.2/css/all.min.css" undefined crossorigin="anonymous"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+
+  
+  <header class="main-header" itemscope itemtype="http://schema.org/WPHeader">
+    <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Xfalcons 覺旅</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+
+    
+    
+
+<li class="menu-item menu-item-home">
+  <a href="/" rel="section"><i class="menu-item-icon fas fa-home"></i>Home</a></li>
+    
+    
+
+<li class="menu-item menu-item-tags">
+  <a href="/tags/" rel="section"><i class="menu-item-icon fas fa-tags"></i>Tags</a></li>
+    
+    
+
+<li class="menu-item menu-item-categories">
+  <a href="/categories/" rel="section"><i class="menu-item-icon fas fa-th"></i>Categories</a></li>
+    
+    
+
+<li class="menu-item menu-item-archives">
+  <a href="/archives/" rel="section"><i class="menu-item-icon fas fa-archive"></i>Archives</a></li>
+    
+
+    
+  </ul>
+</nav>
+</div>
+  </header>
+
+  <div class="flex-container">
+
+    <aside class="sidebar">
+
+  <div class="header-inner">
+    <div class="site-brand-wrapper">
+  <div class="site-meta">
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Xfalcons 覺旅</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+
+    
+    
+
+<li class="menu-item menu-item-home">
+  <a href="/" rel="section"><i class="menu-item-icon fas fa-home"></i>Home</a></li>
+    
+    
+
+<li class="menu-item menu-item-tags">
+  <a href="/tags/" rel="section"><i class="menu-item-icon fas fa-tags"></i>Tags</a></li>
+    
+    
+
+<li class="menu-item menu-item-categories">
+  <a href="/categories/" rel="section"><i class="menu-item-icon fas fa-th"></i>Categories</a></li>
+    
+    
+
+<li class="menu-item menu-item-archives">
+  <a href="/archives/" rel="section"><i class="menu-item-icon fas fa-archive"></i>Archives</a></li>
+    
+
+    
+  </ul>
+</nav>
+  </div>
+
+  <div class="sidebar-inner">
+
+    
+
+    
+    <ul class="sidebar-nav">
+      <li class="sidebar-nav-toc sidebar-nav-active">
+        Table of Contents
+      </li>
+      <li class="sidebar-nav-overview">
+        Overview
+      </li>
+    </ul>
+    
+
+    
+    <div class="post-toc-wrap sidebar-panel sidebar-panel-active">
+      <div class="post-toc"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Purpose"><span class="nav-number">1.</span> <span class="nav-text">Purpose</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#How-it-works"><span class="nav-number">2.</span> <span class="nav-text">How it works</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Environment"><span class="nav-number">3.</span> <span class="nav-text">Environment</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Download-lua-resty-kafka"><span class="nav-number">4.</span> <span class="nav-text">Download lua-resty-kafka</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Directory-layout"><span class="nav-number">5.</span> <span class="nav-text">Directory layout</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Files-description-and-content"><span class="nav-number">6.</span> <span class="nav-text">Files description and content</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Testing"><span class="nav-number">7.</span> <span class="nav-text">Testing</span></a></li></ol></div>
+    </div>
+    
+
+    <div class="site-overview-wrap sidebar-panel">
+      <div class="site-overview">
+  <div class="site-author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    
+    <img class="site-author-image" itemprop="image" src="/images/avatar.jpg"
+      alt="Kevin Luo" />
+    
+    <p class="site-author-name" itemprop="name">Kevin Luo</p>
+    <div class="site-description" itemprop="description"></div>
+  </div>
+
+  
+  <nav class="site-state">
+    
+    <div class="site-state-item site-state-posts">
+      <a href="/archives/">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">posts</span>
+      </a>
+    </div>
+    
+
+    
+
+    
+    <div class="site-state-item site-state-tags">
+      <a href="/tags/">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">tags</span>
+      </a>
+    </div>
+    
+  </nav>
+  
+
+  
+  <div class="links-of-author">
+    
+    
+    <span class="links-of-author-item">
+      <a href="https://github.com/xfalcons" title="GitHub &amp;rarr; https:&#x2F;&#x2F;github.com&#x2F;xfalcons" rel="noopener" target="_blank"><i class="fab fa-github"></i>GitHub</a>    </span>
+    
+    
+    <span class="links-of-author-item">
+      <a href="https://twitter.com/xfalcons" title="Twitter &amp;rarr; https:&#x2F;&#x2F;twitter.com&#x2F;xfalcons" rel="noopener" target="_blank"><i class="fab fa-twitter"></i>Twitter</a>    </span>
+    
+  </div>
+  
+
+  
+</div>
+    </div>
+
+  </div>
+</aside>
+
+    <div class="flex-main">
+
+      <main>
+        
+        <div class="sub-menu-wrap">
+          
+        </div>
+        
+        <div id="content" class="content">
+          <div id="posts" class="posts-expand">
+  
+
+<article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  <div class="post-block">
+
+    <link itemprop="mainEntityOfPage" href="https://xfalcons.github.io/2019/11/08/OpenResty-as-redirect-server-for-logging-sent-to-Kafka/" />
+    <meta itemprop="dateCreated datePublished" content="2019-11-08T11:58:58+08:00" />
+    <meta itemprop="dateModified" content="2019-11-08T15:19:19+08:00" />
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Kevin Luo" />
+      <meta itemprop="description" content="" />
+      <meta itemprop="image" content="/images/avatar.jpg" />
+    </span>
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Xfalcons 覺旅" />
+      
+    </span>
+
+    
+
+    <header class="post-header">
+
+      
+      <h1 class="post-title" itemprop="name headline">
+        
+        OpenResty as redirect server for logging sent to Kafka
+        
+      </h1>
+      
+
+      <div class="post-meta">
+
+  
+  
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="far fa-calendar"></i>
+    </span>
+    <span class="post-meta-item-text">Posted on</span>
+    <time title="Created: 2019-11-08 11:58:58">2019-11-08</time>
+  </span>
+  
+
+  
+
+  
+
+  
+  
+
+</div>
+
+    </header>
+
+    <div class="post-body" itemprop="articleBody">
+      
+      <h3 id="Purpose"><a href="#Purpose" class="headerlink" title="Purpose"></a>Purpose</h3><p>A redirect server for logging is used to trace various urls user clicked. The redirect server will log any query parameters in url and redirect to <code>url</code> parameter finally. The logging should be doing asynchronously to minimize redirect time.</p>
+<p>OpenResty is a combination of Nginx and Lua. I won’t explain that here, you could google it to know more.</p>
+<img class title="This is an image" data-src="/2019/11/08/OpenResty-as-redirect-server-for-logging-sent-to-Kafka/openresty-nginx-lua.png">
+
+<h3 id="How-it-works"><a href="#How-it-works" class="headerlink" title="How it works"></a>How it works</h3><img data-src="http://www.plantuml.com/plantuml/svg/LOqn3i8m40HxlsALFXz8aGOwEaSyuB0lS4gm8_iIyNniGvDkjREQVObdp37g8twC8QSneRjdJXqeemQpKL9nib5GTDPZudJykVLdUgDveKPQEiChPvL0AZ5W4kMsgwKnzQSVYtl0PHMtO4-hiRuVVvwXV0QFD-TCJuP6B4tV5jKmmBANn4wn5rLT5CCN">
+
+<p><em>click url: <a href="https://rd.example.com?show=true&amp;t=32&amp;tag=car&amp;url=https%3A%2F%2Ftoday.line.me" target="_blank" rel="noopener">https://rd.example.com?show=true&amp;t=32&amp;tag=car&amp;url=https%3A%2F%2Ftoday.line.me</a></em><br><em>query parameters should be url-encoded.</em></p>
+<a id="more"></a>
+
+<h3 id="Environment"><a href="#Environment" class="headerlink" title="Environment"></a>Environment</h3><ul>
+<li>MacOS</li>
+<li>Docker Desktop</li>
+<li>Download lua-resty-kafka for lua kafka operation</li>
+<li>Lua to get query paramters and send to kafka</li>
+<li>Encode query parameters using <strong><em>cjson</em></strong> as message</li>
+<li>Send message to kafka</li>
+</ul>
+<h3 id="Download-lua-resty-kafka"><a href="#Download-lua-resty-kafka" class="headerlink" title="Download lua-resty-kafka"></a>Download lua-resty-kafka</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">mkdir openresty</span><br><span class="line"><span class="built_in">cd</span> openresty</span><br><span class="line">wget https://github.com/doujiang24/lua-resty-kafka/archive/v0.07.zip</span><br><span class="line">unzip v0.07.zip</span><br><span class="line">mkdir logs</span><br></pre></td></tr></table></figure>
+
+<h3 id="Directory-layout"><a href="#Directory-layout" class="headerlink" title="Directory layout"></a>Directory layout</h3><p>We will mount docker host files(<strong><em>nginx.conf</em></strong>) and directory(<strong><em>logs</em></strong>, <strong><em>lua-resty-kafka-0.07</em></strong>) to container</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">(base) kevin.luo➜~/dev/openresty» ls -al</span><br><span class="line">total 32</span><br><span class="line">drwxr-xr-x   8 kevin.luo  staff   256 Nov  6 12:59 .</span><br><span class="line">drwxr-xr-x@ 24 kevin.luo  staff   768 Nov  5 20:10 ..</span><br><span class="line">drwxr-xr-x   5 kevin.luo  staff   160 Nov  6 10:47 logs</span><br><span class="line">drwxr-xr-x@  9 kevin.luo  staff   288 Aug 31 08:48 lua-resty-kafka-0.07</span><br><span class="line">-rw-r--r--   1 kevin.luo  staff  4490 Nov  6 12:59 nginx.conf</span><br><span class="line">-rwxr-xr-x   1 kevin.luo  staff   874 Nov  6 11:19 run.sh</span><br><span class="line">-rwxr-xr-x   1 kevin.luo  staff    58 Nov  5 20:29 stop.sh</span><br></pre></td></tr></table></figure>
+
+<h3 id="Files-description-and-content"><a href="#Files-description-and-content" class="headerlink" title="Files description and content"></a>Files description and content</h3><p><code>run.sh</code> is to run this <strong><em>rd</em></strong> service</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/usr/bin/env bash</span></span><br><span class="line"></span><br><span class="line">docker run -d --name=<span class="string">"rd"</span> -p 8089:8089 -v <span class="variable">$PWD</span>/nginx.conf:/usr/<span class="built_in">local</span>/openresty/nginx/conf/nginx.conf:ro -v <span class="variable">$PWD</span>/logs:/usr/<span class="built_in">local</span>/openresty/nginx/logs -v <span class="variable">$PWD</span>/lua-resty-kafka-0.07/lib/resty/kafka:/usr/<span class="built_in">local</span>/openresty/lualib/resty/kafka openresty/openresty:1.15.8.2-4-xenial-nosse42</span><br></pre></td></tr></table></figure>
+
+<p><code>stop.sh</code> is to stop <strong><em>rd</em></strong> service and remove docker container</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/usr/bin/env bash</span></span><br><span class="line"></span><br><span class="line">docker <span class="built_in">kill</span> nginx &amp;&amp; docker rm nginx</span><br></pre></td></tr></table></figure>
+
+<p><code>nginx.conf</code> is the main nginx + lua configuration file.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br></pre></td><td class="code"><pre><span class="line">worker_processes  1;</span><br><span class="line">events &#123;</span><br><span class="line">    use epoll;</span><br><span class="line">    worker_connections 1024;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">error_log logs/error.log;</span><br><span class="line"></span><br><span class="line">http &#123;</span><br><span class="line">    include       mime.types;</span><br><span class="line">    default_type  application/octet-stream;</span><br><span class="line"></span><br><span class="line">    server_tokens off;</span><br><span class="line">    more_clear_headers <span class="string">'Server'</span>;</span><br><span class="line"></span><br><span class="line">    log_format  main  <span class="string">'$remote_addr - $remote_user [$time_local] "$request" '</span></span><br><span class="line">                      <span class="string">'$status $body_bytes_sent "$http_referer" '</span></span><br><span class="line">                      <span class="string">'"$http_user_agent" "$http_x_forwarded_for"'</span>;</span><br><span class="line"></span><br><span class="line">    access_log  logs/access.log  main;</span><br><span class="line"></span><br><span class="line">    sendfile        on;</span><br><span class="line">    keepalive_timeout  65;</span><br><span class="line"></span><br><span class="line">    lua_package_path <span class="string">"/usr/local/openresty/lualib/resty/kafka/?.lua;;"</span>;</span><br><span class="line">    <span class="comment"># without resolver setting, it will fail in DNS lookup</span></span><br><span class="line">    <span class="comment"># either 8.8.8.8 or using container's resolver</span></span><br><span class="line">    <span class="comment"># resolver 8.8.8.8</span></span><br><span class="line">    resolver <span class="built_in">local</span>=on ipv6=off;</span><br><span class="line">    resolver_timeout 5s;</span><br><span class="line"></span><br><span class="line">    server &#123;</span><br><span class="line">        listen       8089;</span><br><span class="line">        server_name  localhost;</span><br><span class="line"></span><br><span class="line">        location / &#123;</span><br><span class="line">            root   html;</span><br><span class="line">            index  index.html index.htm;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Make sure Lua is working</span></span><br><span class="line">        location /hello &#123;</span><br><span class="line">            default_type text/html;</span><br><span class="line">            content_by_lua <span class="string">'</span></span><br><span class="line"><span class="string">                ngx.say("Lua: hello world!")</span></span><br><span class="line"><span class="string">            '</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment"># The default 1by1 gif</span></span><br><span class="line">        location /empty_gif &#123;</span><br><span class="line">           empty_gif;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        location /rd &#123;</span><br><span class="line">            default_type text/html;</span><br><span class="line">		    content_by_lua <span class="string">'</span></span><br><span class="line"><span class="string">                local cjson = require "cjson"</span></span><br><span class="line"><span class="string">                local producer = require "resty.kafka.producer"</span></span><br><span class="line"><span class="string">                -- local client = require "resty.kafka.client"</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">                local broker_list = &#123;</span></span><br><span class="line"><span class="string">                    &#123; host = "192.168.0.16", port = 9092&#125;,</span></span><br><span class="line"><span class="string">                    &#123; host = "192.168.0.17", port = 9092&#125;,</span></span><br><span class="line"><span class="string">                    &#123; host = "192.168.0.18", port = 9092&#125;</span></span><br><span class="line"><span class="string">                &#125;</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">                -- Parsing request args</span></span><br><span class="line"><span class="string">                local params_json = &#123;&#125;</span></span><br><span class="line"><span class="string">                local args, err = ngx.req.get_uri_args()</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">                if err == "truncated" then</span></span><br><span class="line"><span class="string">                    -- one can choose to ignore or reject the current request here</span></span><br><span class="line"><span class="string">                end</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">                for key, val in pairs(args) do</span></span><br><span class="line"><span class="string">                    params_json[key] = val</span></span><br><span class="line"><span class="string">                end</span></span><br><span class="line"><span class="string">                ngx.log(ngx.ERR, "url: ", params_json["d"])</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">                local topic = "redirect-server"</span></span><br><span class="line"><span class="string">                local params_message = cjson.encode(params_json)</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">                -- Set producer async</span></span><br><span class="line"><span class="string">                local bp = producer:new(broker_list, &#123; producer_type = "async" &#125;)</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">                -- The second parameter of send method is to control kafka routing.</span></span><br><span class="line"><span class="string">                -- When it'</span>s nill, it will write message to same partition</span><br><span class="line">                -- With designated key，it will write message to <span class="built_in">hash</span> of key of partition</span><br><span class="line">                <span class="built_in">local</span> ok, err = bp:send(topic, nil, params_message)</span><br><span class="line"></span><br><span class="line">                -- For debugging</span><br><span class="line">                ngx.log(ngx.ERR, <span class="string">"Message in json: "</span>, params_message)</span><br><span class="line"></span><br><span class="line">                <span class="keyword">if</span> not ok <span class="keyword">then</span></span><br><span class="line">                    ngx.log(ngx.ERR, <span class="string">"kafka send err:"</span>, err)</span><br><span class="line">                    <span class="built_in">return</span></span><br><span class="line">                end</span><br><span class="line"></span><br><span class="line">                <span class="keyword">if</span> params_json[<span class="string">"url"</span>] ~= nil <span class="keyword">then</span></span><br><span class="line">                    <span class="built_in">return</span> ngx.redirect(params_json[<span class="string">"url"</span>], 301)</span><br><span class="line">                end</span><br><span class="line"></span><br><span class="line">                <span class="built_in">return</span> ngx.exec(<span class="string">"/empty_gif"</span>)</span><br><span class="line">            <span class="string">';</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">        &#125;</span></span><br><span class="line"><span class="string">    &#125;</span></span><br><span class="line"><span class="string">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="Testing"><a href="#Testing" class="headerlink" title="Testing"></a>Testing</h3><p>Check you logs/error.log file, there should not have any <code>kafka send err:</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">2019/11/06 04:59:44 [error] 6#6: *1 [lua] content_by_lua(nginx.conf:119):25: url: nil, client: 172.17.0.1, server: localhost, request: &quot;GET /rd?a=b&amp;open=false&amp;run=success&amp;yeild=ok&amp;url=http://tw.news.yahoo.com HTTP/1.1&quot;, host: &quot;127.0.0.1:8089&quot;</span><br><span class="line">2019/11/06 04:59:44 [error] 6#6: *1 [lua] content_by_lua(nginx.conf:119):56: Message in json: &#123;&quot;run&quot;:&quot;success&quot;,&quot;yeild&quot;:&quot;ok&quot;,&quot;url&quot;:&quot;http:\/\/tw.news.yahoo.com&quot;,&quot;a&quot;:&quot;b&quot;,&quot;open&quot;:&quot;false&quot;&#125;, client: 172.17.0.1, server: localhost, request: &quot;GET /rd?a=b&amp;open=false&amp;run=success&amp;yeild=ok&amp;url=http://tw.news.yahoo.com HTTP/1.1&quot;, host: &quot;127.0.0.1:8089&quot;</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+  
+  
+
+
+<div>
+  <ul class="post-copyright">
+    <li class="post-copyright-author">
+      <strong>Post author:  </strong>
+      Kevin Luo
+    </li>
+    <li class="post-copyright-link">
+      <strong>Post link: </strong>
+      <a href="https://xfalcons.github.io/2019/11/08/OpenResty-as-redirect-server-for-logging-sent-to-Kafka/" title="OpenResty as redirect server for logging sent to Kafka">https://xfalcons.github.io/2019/11/08/OpenResty-as-redirect-server-for-logging-sent-to-Kafka/</a>    </li>
+    <li class="post-copyright-license">
+      <strong>Copyright Notice:  </strong>
+      All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/null" rel="noopener" target="_blank"><i class="fab fa-creative-commons"></i>BY-NC-SA</a> unless stating additionally.    </li>
+  </ul>
+</div>
+
+
+    
+      <div class="post-tags">
+        
+          <a href="/tags/openresty-logging-kafka/" rel="tag"># openresty logging kafka</a>
+        
+      </div>
+    
+      
+
+    
+    <footer class="post-footer">
+      <div class="post-nav">
+        <div class="post-nav-next post-nav-item">
+          
+          <a href="/2019/11/07/hello-world/" rel="next" title="Hello World">
+            <i class="fas fa-chevron-left"></i> Hello World
+          </a>
+          
+        </div>
+        <span class="post-nav-divider"></span>
+        <div class="post-nav-prev post-nav-item">
+          
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+</article>
+</div>
+        </div>
+        
+      </main>
+
+      <footer class="footer">
+        <div class="footer-inner">
+          <div class="copyright">
+  
+  &copy; 2019 – 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fas fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Kevin Luo</span>
+</div>
+
+<div class="powered-by">
+  Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v4.0.0
+</div>
+
+<span class="post-meta-divider">|</span>
+
+<div class="theme-info">
+  Theme – <a href="https://github.com/JiangTJ/hexo-theme-cake" class="theme-link" rel="noopener" target="_blank">Cake</a> v1.5.0
+</div>
+
+        </div>
+      </footer>
+
+    </div>
+
+  </div>
+
+  <script src="/js/next-boot.js?v=1.5.0"></script>  
+  <script src="//cdn.jsdelivr.net/npm/medium-zoom@1/dist/medium-zoom.min.js" crossorigin="anonymous"></script>
+  <script>
+    mediumZoom('.post-body img:not([data-zoomable="false"]), [data-zoomable]:not([data-zoomable="false"])');
+  </script>
+  
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js" crossorigin="anonymous"></script>
+  <script>
+    lozad('[data-src]').observe();
+  </script>
+  
+</body>
+
+</html>
