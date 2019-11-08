@@ -13,7 +13,7 @@ html {
 body {
   margin: 0;
   position: relative;
-  font-family: 'Itim', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: 'Lato', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   font-size: 14px;
   line-height: 1.8;
   color: #59606a;
@@ -36,7 +36,7 @@ h6 {
   margin: 1em 0;
   padding: 0;
   font-weight: bold;
-  font-family: 'Itim', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: 'Lato', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   line-height: 1.5;
 }
 h1 code,
@@ -417,8 +417,8 @@ pre,
 .highlight {
   margin: 20px 0;
   font-size: 95%;
-  color: #4d4d4c;
-  background: #f7f7f7;
+  color: #c5c8c6;
+  background: #1d1f21;
   line-height: 1.6;
 }
 pre,
@@ -439,12 +439,12 @@ pre {
 }
 pre code {
   background: none;
-  color: #4d4d4c;
+  color: #c5c8c6;
   padding: 0;
   text-shadow: none;
 }
 .highlight *::selection {
-  background: #d6d6d6;
+  background: #373b41;
 }
 .highlight pre {
   border: 0;
@@ -463,7 +463,7 @@ pre code {
 .highlight figcaption {
   background: #eee;
   border-bottom: 1px solid #e9e9e9;
-  color: #4d4d4c;
+  color: #c5c8c6;
   line-height: 1em;
   margin: 0;
   padding: 0.5em;
@@ -477,21 +477,21 @@ pre code {
   clear: both;
 }
 .highlight figcaption a {
-  color: #4d4d4c;
+  color: #c5c8c6;
   float: right;
 }
 .highlight figcaption a:hover {
-  border-bottom-color: #4d4d4c;
+  border-bottom-color: #c5c8c6;
 }
 .highlight .gutter pre {
-  background-color: #eff2f3;
-  color: #869194;
+  background-color: #000;
+  color: #888f96;
   padding-left: 10px;
   padding-right: 10px;
   text-align: right;
 }
 .highlight .code pre {
-  background-color: #f7f7f7;
+  background-color: #1d1f21;
   padding-left: 10px;
   width: 100%;
 }
@@ -502,16 +502,16 @@ pre code {
   border: 0;
 }
 pre .deletion {
-  background: #fdd;
+  background: #800000;
 }
 pre .addition {
-  background: #dfd;
+  background: #008000;
 }
 pre .meta {
-  color: #eab700;
+  color: #f0c674;
 }
 pre .comment {
-  color: #8e908c;
+  color: #969896;
 }
 pre .variable,
 pre .attribute,
@@ -526,7 +526,7 @@ pre .html .doctype,
 pre .css .id,
 pre .css .class,
 pre .css .pseudo {
-  color: #c82829;
+  color: #c66;
 }
 pre .number,
 pre .preprocessor,
@@ -536,7 +536,7 @@ pre .literal,
 pre .params,
 pre .constant,
 pre .command {
-  color: #f5871f;
+  color: #de935f;
 }
 pre .ruby .class .title,
 pre .css .rules .attribute,
@@ -549,11 +549,11 @@ pre .ruby .symbol,
 pre .xml .cdata,
 pre .special,
 pre .formula {
-  color: #718c00;
+  color: #b5bd68;
 }
 pre .title,
 pre .css .hexcolor {
-  color: #3e999f;
+  color: #8abeb7;
 }
 pre .function,
 pre .python .decorator,
@@ -563,11 +563,11 @@ pre .ruby .title .keyword,
 pre .perl .sub,
 pre .javascript .title,
 pre .coffeescript .title {
-  color: #4271ae;
+  color: #81a2be;
 }
 pre .keyword,
 pre .javascript .function {
-  color: #8959a8;
+  color: #b294bb;
 }
 .posts-expand .post-body img.full-image {
   border: none;
@@ -899,7 +899,7 @@ img.box {
   line-height: 36px;
   font-size: 24px;
   font-weight: normal;
-  font-family: 'Lobster', 'Itim', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: 'Lobster', 'Lato', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   color: #fff;
 }
 .site-subtitle {
@@ -1068,7 +1068,7 @@ img.box {
 .post-body {
   overflow-wrap: break-word;
   word-wrap: break-word;
-  font-family: 'Itim', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: 'Lato', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 .post-body .figure .caption {
   margin: -20px auto 15px;
@@ -1305,7 +1305,7 @@ img.box {
 .posts-expand .post-meta {
   margin: 0;
   color: #999;
-  font-family: 'Itim', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: 'Lato', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   font-size: 11px;
   background-color: #dedfe1;
   padding: 5px 20px;
@@ -1518,7 +1518,7 @@ img.box {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #ff6263;
+  background: #c359ff;
 }
 .links-of-author-item {
   margin: 5px 0 0;
