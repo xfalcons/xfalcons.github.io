@@ -14,7 +14,7 @@ body {
   margin: 0;
   position: relative;
   font-family: 'Lato', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.8;
   color: #59606a;
   background: #eeeff0;
@@ -730,7 +730,7 @@ img.box {
 }
 .post-body .image-caption {
   text-align: center;
-  font-size: 14px;
+  font-size: 16px;
   color: #999;
   font-weight: bold;
   line-height: 1;
@@ -1073,7 +1073,7 @@ img.box {
 .post-body .figure .caption {
   margin: -20px auto 15px;
   text-align: center;
-  font-size: 14px;
+  font-size: 16px;
   color: #999;
   font-weight: bold;
   line-height: 1;
@@ -1518,7 +1518,7 @@ img.box {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #5ce825;
+  background: #54fffb;
 }
 .links-of-author-item {
   margin: 5px 0 0;
