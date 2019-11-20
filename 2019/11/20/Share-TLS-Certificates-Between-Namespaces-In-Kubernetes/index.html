@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
+<meta name="theme-color" content="#414852"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inconsolata|Lato|Itim|Lobster"><link rel="stylesheet" href="/css/main.css?v=1.5.0">
+  
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico?v=1.5.0">
+
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '1.5.0',
+    sidebar: {},
+    scroll: {
+      save: 'false'
+    }
+  };
+</script>
+  <meta name="description" content="Problem StatementThere are cases you need to share wildcard SSL certificats between different namespaces through k8s ingress controller(traefik 2.x). From security perspective, you should not do this.">
+<meta name="keywords" content="k8s traefik tls secret">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Share TLS Certificates Between Namespaces In Kubernetes">
+<meta property="og:url" content="https:&#x2F;&#x2F;xfalcons.github.io&#x2F;2019&#x2F;11&#x2F;20&#x2F;Share-TLS-Certificates-Between-Namespaces-In-Kubernetes&#x2F;index.html">
+<meta property="og:site_name" content="Xfalcons">
+<meta property="og:description" content="Problem StatementThere are cases you need to share wildcard SSL certificats between different namespaces through k8s ingress controller(traefik 2.x). From security perspective, you should not do this.">
+<meta property="og:locale" content="en">
+<meta property="og:image" content="https:&#x2F;&#x2F;xfalcons.github.io&#x2F;2019&#x2F;11&#x2F;20&#x2F;Share-TLS-Certificates-Between-Namespaces-In-Kubernetes&#x2F;ingress-multi-ssl.svg">
+<meta property="og:updated_time" content="2019-11-20T08:17:10.117Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https:&#x2F;&#x2F;xfalcons.github.io&#x2F;2019&#x2F;11&#x2F;20&#x2F;Share-TLS-Certificates-Between-Namespaces-In-Kubernetes&#x2F;ingress-multi-ssl.svg"><link rel="canonical" href="https://xfalcons.github.io/2019/11/20/Share-TLS-Certificates-Between-Namespaces-In-Kubernetes/">  
+<title>Share TLS Certificates Between Namespaces In Kubernetes | Xfalcons</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.11.2/css/all.min.css" undefined crossorigin="anonymous">
+  <script src="//cdn.jsdelivr.net/npm/pace-js@1/pace.min.js"></script>
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/pace-js@1/themes/blue/pace-theme-minimal.css"/>
+  </head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+
+  
+  <header class="main-header" itemscope itemtype="http://schema.org/WPHeader">
+    <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Xfalcons</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    <p class="site-subtitle">Hacks &amp; Roll</p>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+
+    
+    
+
+<li class="menu-item menu-item-home">
+  <a href="/" rel="section"><i class="menu-item-icon fas fa-home"></i>Home</a></li>
+    
+    
+
+<li class="menu-item menu-item-tags">
+  <a href="/tags/" rel="section"><i class="menu-item-icon fas fa-tags"></i>Tags</a></li>
+    
+    
+
+<li class="menu-item menu-item-categories">
+  <a href="/categories/" rel="section"><i class="menu-item-icon fas fa-th"></i>Categories</a></li>
+    
+    
+
+<li class="menu-item menu-item-archives">
+  <a href="/archives/" rel="section"><i class="menu-item-icon fas fa-archive"></i>Archives</a></li>
+    
+
+    
+  </ul>
+</nav>
+</div>
+  </header>
+
+  <div class="flex-container">
+
+    <aside class="sidebar">
+
+  <div class="header-inner">
+    <div class="site-brand-wrapper">
+  <div class="site-meta">
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Xfalcons</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    <p class="site-subtitle">Hacks &amp; Roll</p>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+
+    
+    
+
+<li class="menu-item menu-item-home">
+  <a href="/" rel="section"><i class="menu-item-icon fas fa-home"></i>Home</a></li>
+    
+    
+
+<li class="menu-item menu-item-tags">
+  <a href="/tags/" rel="section"><i class="menu-item-icon fas fa-tags"></i>Tags</a></li>
+    
+    
+
+<li class="menu-item menu-item-categories">
+  <a href="/categories/" rel="section"><i class="menu-item-icon fas fa-th"></i>Categories</a></li>
+    
+    
+
+<li class="menu-item menu-item-archives">
+  <a href="/archives/" rel="section"><i class="menu-item-icon fas fa-archive"></i>Archives</a></li>
+    
+
+    
+  </ul>
+</nav>
+  </div>
+
+  <div class="sidebar-inner">
+
+    
+
+    
+    <ul class="sidebar-nav">
+      <li class="sidebar-nav-toc sidebar-nav-active">
+        Table of Contents
+      </li>
+      <li class="sidebar-nav-overview">
+        Overview
+      </li>
+    </ul>
+    
+
+    
+    <div class="post-toc-wrap sidebar-panel sidebar-panel-active">
+      <div class="post-toc"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Problem-Statement"><span class="nav-number">1.</span> <span class="nav-text">Problem Statement</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Scenario"><span class="nav-number">2.</span> <span class="nav-text">Scenario</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Manage-TLS-certification-in-Cluster"><span class="nav-number">3.</span> <span class="nav-text">Manage TLS certification in Cluster</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#User-TLS-certification-in-different-namespaces"><span class="nav-number">3.1.</span> <span class="nav-text">User TLS certification in different namespaces</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Solution"><span class="nav-number">3.2.</span> <span class="nav-text">Solution</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Create-secrets-for-Traefik"><span class="nav-number">3.3.</span> <span class="nav-text">Create secrets for Traefik</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Modify-your-traefik-configuration"><span class="nav-number">3.4.</span> <span class="nav-text">Modify your traefik configuration</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Configure-your-IngressRoute"><span class="nav-number">3.5.</span> <span class="nav-text">Configure your IngressRoute</span></a></li></ol></li></ol></div>
+    </div>
+    
+
+    <div class="site-overview-wrap sidebar-panel">
+      <div class="site-overview">
+  <div class="site-author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    
+    <img class="site-author-image" itemprop="image" src="/images/avatar.jpg"
+      alt="Kevin Luo" />
+    
+    <p class="site-author-name" itemprop="name">Kevin Luo</p>
+    <div class="site-description" itemprop="description">No Play No Gain. Fullstack engineer enjoy in studying new technologies.</div>
+  </div>
+
+  
+  <nav class="site-state">
+    
+    <div class="site-state-item site-state-posts">
+      <a href="/archives/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">posts</span>
+      </a>
+    </div>
+    
+
+    
+
+    
+    <div class="site-state-item site-state-tags">
+      <a href="/tags/">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">tags</span>
+      </a>
+    </div>
+    
+  </nav>
+  
+
+  
+  <div class="links-of-author">
+    
+    
+    <span class="links-of-author-item">
+      <a href="https://github.com/xfalcons" title="GitHub &amp;rarr; https:&#x2F;&#x2F;github.com&#x2F;xfalcons" rel="noopener" target="_blank"><i class="fab fa-github"></i>GitHub</a>    </span>
+    
+    
+    <span class="links-of-author-item">
+      <a href="https://twitter.com/xfalcons" title="Twitter &amp;rarr; https:&#x2F;&#x2F;twitter.com&#x2F;xfalcons" rel="noopener" target="_blank"><i class="fab fa-twitter"></i>Twitter</a>    </span>
+    
+  </div>
+  
+
+  
+</div>
+    </div>
+
+  </div>
+</aside>
+
+    <div class="flex-main">
+
+      <main>
+        
+        <div class="sub-menu-wrap">
+          
+        </div>
+        
+        <div id="content" class="content">
+          <div id="posts" class="posts-expand">
+  
+
+<article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  <div class="post-block">
+
+    <link itemprop="mainEntityOfPage" href="https://xfalcons.github.io/2019/11/20/Share-TLS-Certificates-Between-Namespaces-In-Kubernetes/" />
+    <meta itemprop="dateCreated datePublished" content="2019-11-20T15:32:42+08:00" />
+    <meta itemprop="dateModified" content="2019-11-20T16:17:10+08:00" />
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Kevin Luo" />
+      <meta itemprop="description" content="No Play No Gain. Fullstack engineer enjoy in studying new technologies." />
+      <meta itemprop="image" content="/images/avatar.jpg" />
+    </span>
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Xfalcons" />
+      
+    </span>
+
+    
+
+    <header class="post-header">
+
+      
+      <h1 class="post-title" itemprop="name headline">
+        
+        Share TLS Certificates Between Namespaces In Kubernetes
+        
+      </h1>
+      
+
+      <div class="post-meta">
+
+  
+  
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="far fa-calendar"></i>
+    </span>
+    <span class="post-meta-item-text">Posted on</span>
+    <time title="Created: 2019-11-20 15:32:42">2019-11-20</time>
+  </span>
+  
+
+  
+
+  
+
+  
+  
+
+</div>
+
+    </header>
+
+    <div class="post-body" itemprop="articleBody">
+      
+      <h2 id="Problem-Statement"><a href="#Problem-Statement" class="headerlink" title="Problem Statement"></a>Problem Statement</h2><p>There are cases you need to share wildcard SSL certificats between different namespaces through k8s ingress controller(traefik 2.x). From security perspective, you should not do this. But, but, but…, you still need it when it comes to reality.</p>
+<img class title="This is an image" data-src="/2019/11/20/Share-TLS-Certificates-Between-Namespaces-In-Kubernetes/ingress-multi-ssl.svg">
+
+<a id="more"></a>
+
+<h2 id="Scenario"><a href="#Scenario" class="headerlink" title="Scenario"></a>Scenario</h2><p>You deploy your kubernetes cluster in your private cloud and having lots of services deployed on top of it. Your service, however will only expose <code>domain-a.com</code>, <code>domain-b.com</code> to the world. You also have wildcard certificate files for both domain.</p>
+<p>If you have more than 3 namespaces in your cluster, then you have to create those tls secrets for 3 different namespaces. When you renew your certificates, you need to modify them one by one too.</p>
+<p>When we use Traefik 2.x for our ingress controller, then there comes to question, <code>Can I set namespace for TLS secretName in IngressRoute?</code></p>
+<h2 id="Manage-TLS-certification-in-Cluster"><a href="#Manage-TLS-certification-in-Cluster" class="headerlink" title="Manage TLS certification in Cluster"></a>Manage TLS certification in Cluster</h2><h3 id="User-TLS-certification-in-different-namespaces"><a href="#User-TLS-certification-in-different-namespaces" class="headerlink" title="User TLS certification in different namespaces"></a>User TLS certification in different namespaces</h3><p>For IngressRoute - I would like to be able to set namespace for TLS secretName.<br>Currently, I am putting my IngressRoutes into the same namespace as the service they refer to.<br>And it is currently not possible to point the TLS secretName at another namespace.<br>So if I have more than one IngressRoute using the same certificate, then I need to create a secret for every namespace.</p>
+<blockquote>
+<p>Secrets are namespaced for isolation and security reasons. We should not support cross-namespace secret mounting, as it would allow users to fish for secrets.</p>
+</blockquote>
+<p>I have my services in various namespaces other than default and want to have my IngressRoutes in the same namespace.<br>However, I am using the same wildcard certificate for multiple IngressRoutes, while I have to put the secret in a single namespace.</p>
+<p>How do I go about managing this, if I don’t want to create a secret per namespace?</p>
+<h3 id="Solution"><a href="#Solution" class="headerlink" title="Solution"></a>Solution</h3><p>You can specify TLS certificates to Traefik (TLS secrets mounted in Traefik pod) as defined in <a href="https://docs.traefik.io/v2.0/https/tls/#user-defined" target="_blank" rel="noopener">https://docs.traefik.io/v2.0/https/tls/#user-defined</a> .</p>
+<p>Then, for your IngressRoute, you specify tls: {} and Traefik will match based on the router rule.</p>
+<p>A quick example had been added into the community forum topic you started at <a href="https://community.containo.us/t/can-i-set-namespace-for-tls-secretname-in-ingressroute/2619" target="_blank" rel="noopener">https://community.containo.us/t/can-i-set-namespace-for-tls-secretname-in-ingressroute/2619</a>.</p>
+<h3 id="Create-secrets-for-Traefik"><a href="#Create-secrets-for-Traefik" class="headerlink" title="Create secrets for Traefik"></a>Create secrets for Traefik</h3><p>For installation of Traefik, please refer to <a href="https://docs.traefik.io/getting-started/install-traefik/" target="_blank" rel="noopener">official site</a>. Suppose you install traefik in <code>traefik-system</code> system.</p>
+<p>Prepare your certificates, naming tls-a.key, tls-a.crt, tls-b.key, tls-b.crt. Get base64 of them for yaml files.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ cat tls-a.key | base64</span><br><span class="line">$ cat tls-a.crt | base64</span><br><span class="line">$ cat tls-b.key | base64</span><br><span class="line">$ cat tls-b.crt | base64</span><br></pre></td></tr></table></figure>
+
+<p>Your <code>tls.yaml</code> file.</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Secret</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">wildcard-domain-a-com-tls-cert</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">traefik-system</span></span><br><span class="line"><span class="attr">type:</span> <span class="string">kubernetes.io/tls</span></span><br><span class="line"><span class="attr">data:</span></span><br><span class="line">  <span class="attr">tls.crt:</span> <span class="string">(base64</span> <span class="string">of</span> <span class="string">your</span> <span class="string">tls-a.crt)</span></span><br><span class="line">  <span class="attr">tls.key:</span> <span class="string">(base64</span> <span class="string">of</span> <span class="string">your</span> <span class="string">tls-a.key)</span></span><br><span class="line"></span><br><span class="line"><span class="meta">---</span></span><br><span class="line"></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Secret</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">wildcard-domain-b-com-tls-cert</span></span><br><span class="line">  <span class="attr">namespace:</span> <span class="string">traefik-system</span></span><br><span class="line"><span class="attr">type:</span> <span class="string">kubernetes.io/tls</span></span><br><span class="line"><span class="attr">data:</span></span><br><span class="line">  <span class="attr">tls.crt:</span> <span class="string">(base64</span> <span class="string">of</span> <span class="string">your</span> <span class="string">tls-b.crt)</span></span><br><span class="line">  <span class="attr">tls.key:</span> <span class="string">(base64</span> <span class="string">of</span> <span class="string">your</span> <span class="string">tls-b.key)</span></span><br></pre></td></tr></table></figure>
+
+<p>Apply it to your cluster.</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ kubectl apply -f tls.yaml</span><br></pre></td></tr></table></figure>
+
+<h3 id="Modify-your-traefik-configuration"><a href="#Modify-your-traefik-configuration" class="headerlink" title="Modify your traefik configuration"></a>Modify your traefik configuration</h3><p>In your traefik yaml file, you have to add/modify as following.</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">ConfigMap</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">traefik-dynamic-config</span></span><br><span class="line"><span class="attr">data:</span></span><br><span class="line">  <span class="attr">dynamic.yaml:</span> <span class="string">|</span></span><br><span class="line">    <span class="comment"># Dynamic configuration</span></span><br><span class="line">    <span class="attr">tls:</span></span><br><span class="line">      <span class="attr">certificates:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">certFile:</span> <span class="string">/wildcard-domain-a-com/tls.crt</span></span><br><span class="line">          <span class="attr">keyFile:</span> <span class="string">/wildcard-domain-a-com/tls.key</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">certFile:</span> <span class="string">/wildcard-domain-b-com/tls.crt</span></span><br><span class="line">          <span class="attr">keyFile:</span> <span class="string">/wildcard-domain-b-com/tls.key</span></span><br><span class="line">    <span class="attr">stores:</span></span><br><span class="line">      <span class="attr">default:</span> <span class="string">&#123;&#125;</span></span><br><span class="line">    </span><br><span class="line"><span class="meta">---</span></span><br><span class="line"></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">apps/v1beta2</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">DaemonSet</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">traefik</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">selector:</span></span><br><span class="line">    <span class="attr">matchLabels:</span></span><br><span class="line">      <span class="attr">name:</span> <span class="string">traefik</span></span><br><span class="line">  <span class="attr">template:</span></span><br><span class="line">    <span class="attr">metadata:</span></span><br><span class="line">      <span class="attr">labels:</span></span><br><span class="line">        <span class="attr">name:</span> <span class="string">traefik</span></span><br><span class="line">    <span class="attr">spec:</span></span><br><span class="line">      <span class="attr">containers:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">traefik</span></span><br><span class="line">        <span class="attr">image:</span> <span class="string">traefik:v2.0.4</span></span><br><span class="line">        <span class="attr">imagePullPolicy:</span> <span class="string">IfNotPresent</span></span><br><span class="line">        <span class="attr">args:</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">--entryPoints.web.address=:80</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">--entryPoints.websecure.address=:443</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">--api.insecure=true</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">--api.dashboard=true</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">--providers.kubernetescrd</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">--providers.file.filename=/config/dynamic.yaml</span></span><br><span class="line">        <span class="attr">volumeMounts:</span></span><br><span class="line">          <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">certs-a</span></span><br><span class="line">            <span class="attr">mountPath:</span> <span class="string">"/wildcard-domain-a-com"</span></span><br><span class="line">            <span class="attr">readOnly:</span> <span class="literal">true</span></span><br><span class="line">          <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">certs-b</span></span><br><span class="line">            <span class="attr">mountPath:</span> <span class="string">"/wildcard-domain-a-com"</span></span><br><span class="line">            <span class="attr">readOnly:</span> <span class="literal">true</span></span><br><span class="line">          <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">config</span></span><br><span class="line">            <span class="attr">mountPath:</span> <span class="string">"/config"</span></span><br><span class="line">            <span class="attr">readOnly:</span> <span class="literal">true</span>     </span><br><span class="line">      <span class="attr">volumes:</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">certs-a</span></span><br><span class="line">          <span class="attr">secret:</span></span><br><span class="line">            <span class="attr">secretName:</span> <span class="string">wildcard-domain-a-com-tls-cert</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">certs-b</span></span><br><span class="line">          <span class="attr">secret:</span></span><br><span class="line">            <span class="attr">secretName:</span> <span class="string">wildcard-domain-b-com-tls-cert</span></span><br><span class="line">        <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">config</span></span><br><span class="line">          <span class="attr">configMap:</span></span><br><span class="line">            <span class="attr">name:</span> <span class="string">traefik-dynamic-config</span>    </span><br><span class="line">      <span class="attr">dnsPolicy:</span> <span class="string">ClusterFirstWithHostNet</span></span><br><span class="line">      <span class="attr">hostNetwork:</span> <span class="literal">true</span></span><br><span class="line">      <span class="attr">serviceAccountName:</span> <span class="string">traefik-ingress-controller</span></span><br><span class="line">  <span class="attr">updateStrategy:</span></span><br><span class="line">    <span class="attr">rollingUpdate:</span></span><br><span class="line">      <span class="attr">maxUnavailable:</span> <span class="number">1</span></span><br><span class="line">    <span class="attr">type:</span> <span class="string">RollingUpdate</span></span><br></pre></td></tr></table></figure>
+
+<p>We use <code>--providers.file.filename</code> for dynamic configuration for our traefik, and having volumeMounts[].mountPath same as certFile path, the traefik can retrieve those files when it needs it. Apply it to your traefik.</p>
+<h3 id="Configure-your-IngressRoute"><a href="#Configure-your-IngressRoute" class="headerlink" title="Configure your IngressRoute"></a>Configure your IngressRoute</h3><p>Here you have 2 services in two different namespaces. The service end points are:</p>
+<ul>
+<li><a href="https://service1.domain-a.com" target="_blank" rel="noopener">https://service1.domain-a.com</a></li>
+<li><a href="https://service2.domain-b.com" target="_blank" rel="noopener">https://service2.domain-b.com</a></li>
+</ul>
+<p>then modify your <code>ingressroute.yaml</code></p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Service</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">service1</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">ports:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">port:</span> <span class="number">443</span></span><br><span class="line">      <span class="attr">targetPort:</span> <span class="number">8080</span></span><br><span class="line">  <span class="attr">selector:</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">traefik</span></span><br><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">v1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">Service</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">service2</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">ports:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">port:</span> <span class="number">443</span></span><br><span class="line">      <span class="attr">targetPort:</span> <span class="number">8080</span></span><br><span class="line">  <span class="attr">selector:</span></span><br><span class="line">    <span class="attr">name:</span> <span class="string">traefik</span></span><br><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">traefik.containo.us/v1alpha1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">IngressRoute</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">service1-ingress</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">entryPoints:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">websecure</span></span><br><span class="line">  <span class="attr">routes:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">match:</span> <span class="string">Host(`service1.domain-a.com`)</span></span><br><span class="line">    <span class="attr">kind:</span> <span class="string">Rule</span></span><br><span class="line">    <span class="attr">priority:</span> <span class="number">1</span></span><br><span class="line">    <span class="attr">services:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">service1</span></span><br><span class="line">      <span class="attr">port:</span> <span class="number">443</span></span><br><span class="line">  <span class="attr">tls:</span> <span class="string">&#123;&#125;</span></span><br><span class="line"><span class="meta">---</span></span><br><span class="line"><span class="attr">apiVersion:</span> <span class="string">traefik.containo.us/v1alpha1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">IngressRoute</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">service2-ingress</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">entryPoints:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">websecure</span></span><br><span class="line">  <span class="attr">routes:</span></span><br><span class="line">  <span class="bullet">-</span> <span class="attr">match:</span> <span class="string">Host(`service2.domain-a.com`)</span></span><br><span class="line">    <span class="attr">kind:</span> <span class="string">Rule</span></span><br><span class="line">    <span class="attr">priority:</span> <span class="number">1</span></span><br><span class="line">    <span class="attr">services:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">service2</span></span><br><span class="line">      <span class="attr">port:</span> <span class="number">443</span></span><br><span class="line">  <span class="attr">tls:</span> <span class="string">&#123;&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>The most import part is <code>tls</code> as <code>{}</code>, no more <code>tls.secretName</code>.</p>
+<p>Happy hacking…</p>
+      
+    </div>
+
+    
+    
+  
+  
+
+
+<div>
+  <ul class="post-copyright">
+    <li class="post-copyright-author">
+      <strong>Post author:  </strong>
+      Kevin Luo
+    </li>
+    <li class="post-copyright-link">
+      <strong>Post link: </strong>
+      <a href="https://xfalcons.github.io/2019/11/20/Share-TLS-Certificates-Between-Namespaces-In-Kubernetes/" title="Share TLS Certificates Between Namespaces In Kubernetes">https://xfalcons.github.io/2019/11/20/Share-TLS-Certificates-Between-Namespaces-In-Kubernetes/</a>    </li>
+    <li class="post-copyright-license">
+      <strong>Copyright Notice:  </strong>
+      All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/null" rel="noopener" target="_blank"><i class="fab fa-creative-commons"></i>BY-NC-SA</a> unless stating additionally.    </li>
+  </ul>
+</div>
+
+
+    
+      <div class="post-tags">
+        
+          <a href="/tags/k8s-traefik-tls-secret/" rel="tag"># k8s traefik tls secret</a>
+        
+      </div>
+    
+      
+
+    
+    <footer class="post-footer">
+      <div class="post-nav">
+        <div class="post-nav-next post-nav-item">
+          
+          <a href="/2019/11/08/OpenResty-as-redirect-server-for-logging-sent-to-Kafka/" rel="next" title="OpenResty as redirect server for logging sent to Kafka">
+            <i class="fas fa-chevron-left"></i> OpenResty as redirect server for logging sent to Kafka
+          </a>
+          
+        </div>
+        <span class="post-nav-divider"></span>
+        <div class="post-nav-prev post-nav-item">
+          
+        </div>
+      </div>
+    </footer>
+    
+  </div>
+</article>
+</div>
+        </div>
+        
+      </main>
+
+      <footer class="footer">
+        <div class="footer-inner">
+          <div class="copyright">
+  
+  &copy; 2019 – 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fas fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Kevin Luo</span>
+</div>
+
+<div class="powered-by">
+  Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v4.0.0
+</div>
+
+<span class="post-meta-divider">|</span>
+
+<div class="theme-info">
+  Theme – <a href="https://github.com/JiangTJ/hexo-theme-cake" class="theme-link" rel="noopener" target="_blank">Cake</a> v1.5.0
+</div>
+
+        </div>
+      </footer>
+
+    </div>
+
+  </div>
+
+  <script src="/js/next-boot.js?v=1.5.0"></script>  
+  <script src="//cdn.jsdelivr.net/npm/medium-zoom@1/dist/medium-zoom.min.js" crossorigin="anonymous"></script>
+  <script>
+    mediumZoom('.post-body img:not([data-zoomable="false"]), [data-zoomable]:not([data-zoomable="false"])');
+  </script>
+  
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js" crossorigin="anonymous"></script>
+  <script>
+    lozad('[data-src]').observe();
+  </script>
+  
+</body>
+
+</html>
