@@ -6,14 +6,14 @@
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 4.0.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico">
   <link rel="mask-icon" href="/images/logo.svg" color="#222">
   <link rel="alternate" href="/atom.xml" title="Xfalcons" type="application/atom+xml">
 
 <link rel="stylesheet" href="/css/main.css">
 
-
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic|Lobster:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
 <link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
 
 
@@ -21,11 +21,11 @@
   var NexT = window.NexT || {};
   var CONFIG = {
     root: '/',
-    scheme: 'Muse',
+    scheme: 'Gemini',
     version: '7.5.0',
     exturl: false,
     sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
-    copycode: {"enable":false,"show_result":false,"style":null},
+    copycode: {"enable":true,"show_result":false,"style":"mac"},
     back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
     bookmark: {"enable":false,"color":"#222","save":"auto"},
     fancybox: false,
@@ -60,8 +60,7 @@
 <meta property="og:description" content="PurposeA redirect server for logging is used to trace various urls user clicked. The redirect server will log any query parameters in url and redirect to url parameter finally. The logging should be d">
 <meta property="og:locale" content="en">
 <meta property="og:image" content="https:&#x2F;&#x2F;xfalcons.github.io&#x2F;2019&#x2F;11&#x2F;08&#x2F;OpenResty-as-redirect-server-for-logging-sent-to-Kafka&#x2F;openresty-nginx-lua.png">
-<meta property="og:image" content="http:&#x2F;&#x2F;www.plantuml.com&#x2F;plantuml&#x2F;svg&#x2F;LOqn3i8m40HxlsALFXz8aGOwEaSyuB0lS4gm8_iIyNniGvDkjREQVObdp37g8twC8QSneRjdJXqeemQpKL9nib5GTDPZudJykVLdUgDveKPQEiChPvL0AZ5W4kMsgwKnzQSVYtl0PHMtO4-hiRuVVvwXV0QFD-TCJuP6B4tV5jKmmBANn4wn5rLT5CCN">
-<meta property="og:updated_time" content="2019-11-20T08:17:49.634Z">
+<meta property="og:updated_time" content="2019-12-18T07:59:09.528Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https:&#x2F;&#x2F;xfalcons.github.io&#x2F;2019&#x2F;11&#x2F;08&#x2F;OpenResty-as-redirect-server-for-logging-sent-to-Kafka&#x2F;openresty-nginx-lua.png">
 
@@ -192,7 +191,7 @@
     <link itemprop="mainEntityOfPage" href="https://xfalcons.github.io/2019/11/08/OpenResty-as-redirect-server-for-logging-sent-to-Kafka/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.jpg">
       <meta itemprop="name" content="Kevin Luo">
       <meta itemprop="description" content="No Play No Gain. Fullstack engineer enjoy in studying new technologies.">
     </span>
@@ -219,7 +218,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2019-11-20 16:17:49" itemprop="dateModified" datetime="2019-11-20T16:17:49+08:00">2019-11-20</time>
+                <time title="Modified: 2019-12-18 15:59:09" itemprop="dateModified" datetime="2019-12-18T15:59:09+08:00">2019-12-18</time>
               </span>
 
           
@@ -235,11 +234,10 @@
       
         <h3 id="Purpose"><a href="#Purpose" class="headerlink" title="Purpose"></a>Purpose</h3><p>A redirect server for logging is used to trace various urls user clicked. The redirect server will log any query parameters in url and redirect to <code>url</code> parameter finally. The logging should be doing asynchronously to minimize redirect time.</p>
 <p>OpenResty is a combination of Nginx and Lua. I won’t explain that here, you could google it to know more.</p>
-<img class title="This is an image" data-src="/2019/11/08/OpenResty-as-redirect-server-for-logging-sent-to-Kafka/openresty-nginx-lua.png">
-
+<p><img src="/2019/11/08/OpenResty-as-redirect-server-for-logging-sent-to-Kafka/openresty-nginx-lua.png" alt=""></p>
 <a id="more"></a>
 
-<h3 id="How-it-works"><a href="#How-it-works" class="headerlink" title="How it works"></a>How it works</h3><img data-src="http://www.plantuml.com/plantuml/svg/LOqn3i8m40HxlsALFXz8aGOwEaSyuB0lS4gm8_iIyNniGvDkjREQVObdp37g8twC8QSneRjdJXqeemQpKL9nib5GTDPZudJykVLdUgDveKPQEiChPvL0AZ5W4kMsgwKnzQSVYtl0PHMtO4-hiRuVVvwXV0QFD-TCJuP6B4tV5jKmmBANn4wn5rLT5CCN">
+<h3 id="How-it-works"><a href="#How-it-works" class="headerlink" title="How it works"></a>How it works</h3><img  src=http://www.plantuml.com/plantuml/svg/LOqn3i8m40HxlsALFXz8aGOwEaSyuB0lS4gm8_iIyNniGvDkjREQVObdp37g8twC8QSneRjdJXqeemQpKL9nib5GTDPZudJykVLdUgDveKPQEiChPvL0AZ5W4kMsgwKnzQSVYtl0PHMtO4-hiRuVVvwXV0QFD-TCJuP6B4tV5jKmmBANn4wn5rLT5CCN>
 
 <p><em>click url: <a href="https://rd.example.com?show=true&amp;t=32&amp;tag=car&amp;url=https%3A%2F%2Ftoday.line.me" target="_blank" rel="noopener">https://rd.example.com?show=true&amp;t=32&amp;tag=car&amp;url=https%3A%2F%2Ftoday.line.me</a></em><br><em>query parameters should be url-encoded.</em></p>
 <h3 id="Environment"><a href="#Environment" class="headerlink" title="Environment"></a>Environment</h3><ul>
@@ -339,7 +337,7 @@
       <div class="site-overview-wrap sidebar-panel">
         <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
   <img class="site-author-image" itemprop="image" alt="Kevin Luo"
-    src="/images/avatar.gif">
+    src="/images/avatar.jpg">
   <p class="site-author-name" itemprop="name">Kevin Luo</p>
   <div class="site-description" itemprop="description">No Play No Gain. Fullstack engineer enjoy in studying new technologies.</div>
 </div>
@@ -392,7 +390,7 @@
   <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v4.0.0
   </div>
   <span class="post-meta-divider">|</span>
-  <div class="theme-info">Theme – <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> v7.5.0
+  <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.5.0
   </div>
 
         
@@ -418,7 +416,7 @@
   <script src="/lib/velocity/velocity.min.js"></script>
   <script src="/lib/velocity/velocity.ui.min.js"></script>
 <script src="/js/utils.js"></script><script src="/js/motion.js"></script>
-<script src="/js/schemes/muse.js"></script>
+<script src="/js/schemes/pisces.js"></script>
 <script src="/js/next-boot.js"></script>
 
 

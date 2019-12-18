@@ -6,14 +6,14 @@
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 4.0.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.ico">
   <link rel="mask-icon" href="/images/logo.svg" color="#222">
   <link rel="alternate" href="/atom.xml" title="Xfalcons" type="application/atom+xml">
 
 <link rel="stylesheet" href="/css/main.css">
 
-
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic|Lobster:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
 <link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
 
 
@@ -21,11 +21,11 @@
   var NexT = window.NexT || {};
   var CONFIG = {
     root: '/',
-    scheme: 'Muse',
+    scheme: 'Gemini',
     version: '7.5.0',
     exturl: false,
     sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
-    copycode: {"enable":false,"show_result":false,"style":null},
+    copycode: {"enable":true,"show_result":false,"style":"mac"},
     back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
     bookmark: {"enable":false,"color":"#222","save":"auto"},
     fancybox: false,
@@ -188,7 +188,7 @@
     <link itemprop="mainEntityOfPage" href="https://xfalcons.github.io/2019/11/20/Share-TLS-Certificates-Between-Namespaces-In-Kubernetes/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.jpg">
       <meta itemprop="name" content="Kevin Luo">
       <meta itemprop="description" content="No Play No Gain. Fullstack engineer enjoy in studying new technologies.">
     </span>
@@ -208,10 +208,16 @@
                 <i class="fa fa-calendar-o"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2019-11-20 15:32:42 / Modified: 16:17:10" itemprop="dateCreated datePublished" datetime="2019-11-20T15:32:42+08:00">2019-11-20</time>
+              <time title="Created: 2019-11-20 15:32:42" itemprop="dateCreated datePublished" datetime="2019-11-20T15:32:42+08:00">2019-11-20</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2019-12-18 15:59:13" itemprop="dateModified" datetime="2019-12-18T15:59:13+08:00">2019-12-18</time>
+              </span>
 
           
 
@@ -225,7 +231,7 @@
 
       
           <h2 id="Problem-Statement"><a href="#Problem-Statement" class="headerlink" title="Problem Statement"></a>Problem Statement</h2><p>There are cases you need to share wildcard SSL certificats between different namespaces through k8s ingress controller(traefik 2.x). From security perspective, you should not do this. But, but, but…, you still need it when it comes to reality.</p>
-<img class title="This is an image" data-src="/2019/11/20/Share-TLS-Certificates-Between-Namespaces-In-Kubernetes/ingress-multi-ssl.svg">
+<p><img src="/2019/11/20/Share-TLS-Certificates-Between-Namespaces-In-Kubernetes/ingress-multi-ssl.svg" alt=""></p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2019/11/20/Share-TLS-Certificates-Between-Namespaces-In-Kubernetes/#more" rel="contents">
@@ -255,7 +261,7 @@
     <link itemprop="mainEntityOfPage" href="https://xfalcons.github.io/2019/11/08/OpenResty-as-redirect-server-for-logging-sent-to-Kafka/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.jpg">
       <meta itemprop="name" content="Kevin Luo">
       <meta itemprop="description" content="No Play No Gain. Fullstack engineer enjoy in studying new technologies.">
     </span>
@@ -283,7 +289,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2019-11-20 16:17:49" itemprop="dateModified" datetime="2019-11-20T16:17:49+08:00">2019-11-20</time>
+                <time title="Modified: 2019-12-18 15:59:09" itemprop="dateModified" datetime="2019-12-18T15:59:09+08:00">2019-12-18</time>
               </span>
 
           
@@ -299,7 +305,7 @@
       
           <h3 id="Purpose"><a href="#Purpose" class="headerlink" title="Purpose"></a>Purpose</h3><p>A redirect server for logging is used to trace various urls user clicked. The redirect server will log any query parameters in url and redirect to <code>url</code> parameter finally. The logging should be doing asynchronously to minimize redirect time.</p>
 <p>OpenResty is a combination of Nginx and Lua. I won’t explain that here, you could google it to know more.</p>
-<img class title="This is an image" data-src="/2019/11/08/OpenResty-as-redirect-server-for-logging-sent-to-Kafka/openresty-nginx-lua.png">
+<p><img src="/2019/11/08/OpenResty-as-redirect-server-for-logging-sent-to-Kafka/openresty-nginx-lua.png" alt=""></p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2019/11/08/OpenResty-as-redirect-server-for-logging-sent-to-Kafka/#more" rel="contents">
@@ -329,7 +335,7 @@
     <link itemprop="mainEntityOfPage" href="https://xfalcons.github.io/2019/11/07/hello-world/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="image" content="/images/avatar.jpg">
       <meta itemprop="name" content="Kevin Luo">
       <meta itemprop="description" content="No Play No Gain. Fullstack engineer enjoy in studying new technologies.">
     </span>
@@ -352,6 +358,13 @@
 
               <time title="Created: 2019-11-07 16:07:25" itemprop="dateCreated datePublished" datetime="2019-11-07T16:07:25+08:00">2019-11-07</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2019-12-18 16:22:10" itemprop="dateModified" datetime="2019-12-18T16:22:10+08:00">2019-12-18</time>
+              </span>
 
           
 
@@ -374,7 +387,15 @@
 <h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
 
 <p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+<h3 id="Deploy-to-Githup-page"><a href="#Deploy-to-Githup-page" class="headerlink" title="Deploy to Githup page"></a>Deploy to Githup page</h3><p>1) Installation<br>While at the root of your hexo project:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ npm install hexo-deployer-git --save</span><br></pre></td></tr></table></figure>
+
+<p>2) Configuration<br>Open your _config.yml and edit the Deployment section:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">deploy:</span><br><span class="line">  type: git</span><br><span class="line">  repo: https://github.com/username/your-blog-url.github.io</span><br></pre></td></tr></table></figure>
+
+<p>Use your blog github repo URL in the repo property</p>
+<p>3) Deploy !<br>Run hexo deploy and your blog is online. Easy, wasn’t it ?</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
 
 <p>More info: <a href="https://hexo.io/docs/one-command-deployment.html" target="_blank" rel="noopener">Deployment</a></p>
 
@@ -430,7 +451,7 @@
       <div class="site-overview-wrap sidebar-panel">
         <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
   <img class="site-author-image" itemprop="image" alt="Kevin Luo"
-    src="/images/avatar.gif">
+    src="/images/avatar.jpg">
   <p class="site-author-name" itemprop="name">Kevin Luo</p>
   <div class="site-description" itemprop="description">No Play No Gain. Fullstack engineer enjoy in studying new technologies.</div>
 </div>
@@ -483,7 +504,7 @@
   <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> v4.0.0
   </div>
   <span class="post-meta-divider">|</span>
-  <div class="theme-info">Theme – <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> v7.5.0
+  <div class="theme-info">Theme – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.5.0
   </div>
 
         
@@ -509,7 +530,7 @@
   <script src="/lib/velocity/velocity.min.js"></script>
   <script src="/lib/velocity/velocity.ui.min.js"></script>
 <script src="/js/utils.js"></script><script src="/js/motion.js"></script>
-<script src="/js/schemes/muse.js"></script>
+<script src="/js/schemes/pisces.js"></script>
 <script src="/js/next-boot.js"></script>
 
 
