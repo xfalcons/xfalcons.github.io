@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>OpenResty as redirect server for logging sent to Kafka | Xfalcons - Peregrine Falcon</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="PurposeA redirect server for logging is used to trace various urls user clicked. The redirect server will log any query parameters in url and redirect to url parameter finally. The logging should be d">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OpenResty as redirect server for logging sent to Kafka">
+<meta property="og:url" content="https://xfalcons.github.io/2019/11/08/OpenResty-as-redirect-server-for-logging-sent-to-Kafka/index.html">
+<meta property="og:site_name" content="Xfalcons - Peregrine Falcon">
+<meta property="og:description" content="PurposeA redirect server for logging is used to trace various urls user clicked. The redirect server will log any query parameters in url and redirect to url parameter finally. The logging should be d">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2019-11-08T03:58:58.000Z">
+<meta property="article:modified_time" content="2026-10-05T13:24:59.658Z">
+<meta property="article:author" content="Kevin Luo">
+<meta property="article:tag" content="openresty logging kafka">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Xfalcons - Peregrine Falcon" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css">
+
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Xfalcons - Peregrine Falcon</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">Life is a journey, not a destination</a>
+        </h2>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Search"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://xfalcons.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-OpenResty-as-redirect-server-for-logging-sent-to-Kafka" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2019/11/08/OpenResty-as-redirect-server-for-logging-sent-to-Kafka/" class="article-date">
+  <time class="dt-published" datetime="2019-11-08T03:58:58.000Z" itemprop="datePublished">2019-11-08</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      OpenResty as redirect server for logging sent to Kafka
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h3 id="Purpose"><a href="#Purpose" class="headerlink" title="Purpose"></a>Purpose</h3><p>A redirect server for logging is used to trace various urls user clicked. The redirect server will log any query parameters in url and redirect to <code>url</code> parameter finally. The logging should be doing asynchronously to minimize redirect time.</p>
+<p>OpenResty is a combination of Nginx and Lua. I won’t explain that here, you could google it to know more.</p>
+<span id="more"></span>
+
+<h3 id="Environment"><a href="#Environment" class="headerlink" title="Environment"></a>Environment</h3><ul>
+<li>MacOS</li>
+<li>Docker Desktop</li>
+<li>Download lua-resty-kafka for lua kafka operation</li>
+<li>Lua to get query paramters and send to kafka</li>
+<li>Encode query parameters using <em><strong>cjson</strong></em> as message</li>
+<li>Send message to kafka</li>
+</ul>
+<h3 id="Download-lua-resty-kafka"><a href="#Download-lua-resty-kafka" class="headerlink" title="Download lua-resty-kafka"></a>Download lua-resty-kafka</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> openresty</span><br><span class="line"><span class="built_in">cd</span> openresty</span><br><span class="line">wget https://github.com/doujiang24/lua-resty-kafka/archive/v0.07.zip</span><br><span class="line">unzip v0.07.zip</span><br><span class="line"><span class="built_in">mkdir</span> logs</span><br></pre></td></tr></table></figure>
+
+<h3 id="Directory-layout"><a href="#Directory-layout" class="headerlink" title="Directory layout"></a>Directory layout</h3><p>We will mount docker host files(<em><strong>nginx.conf</strong></em>) and directory(<em><strong>logs</strong></em>, <em><strong>lua-resty-kafka-0.07</strong></em>) to container</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">(base) kevin.luo➜~/dev/openresty» <span class="built_in">ls</span> -al</span><br><span class="line">total 32</span><br><span class="line">drwxr-xr-x   8 kevin.luo  staff   256 Nov  6 12:59 .</span><br><span class="line">drwxr-xr-x@ 24 kevin.luo  staff   768 Nov  5 20:10 ..</span><br><span class="line">drwxr-xr-x   5 kevin.luo  staff   160 Nov  6 10:47 logs</span><br><span class="line">drwxr-xr-x@  9 kevin.luo  staff   288 Aug 31 08:48 lua-resty-kafka-0.07</span><br><span class="line">-rw-r--r--   1 kevin.luo  staff  4490 Nov  6 12:59 nginx.conf</span><br><span class="line">-rwxr-xr-x   1 kevin.luo  staff   874 Nov  6 11:19 run.sh</span><br><span class="line">-rwxr-xr-x   1 kevin.luo  staff    58 Nov  5 20:29 stop.sh</span><br></pre></td></tr></table></figure>
+
+<h3 id="Files-description-and-content"><a href="#Files-description-and-content" class="headerlink" title="Files description and content"></a>Files description and content</h3><p><code>run.sh</code> is to run this <em><strong>rd</strong></em> service</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/usr/bin/env bash</span></span><br><span class="line"></span><br><span class="line">docker run -d --name=<span class="string">&quot;rd&quot;</span> -p 8089:8089 -v <span class="variable">$PWD</span>/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro -v <span class="variable">$PWD</span>/logs:/usr/local/openresty/nginx/logs -v <span class="variable">$PWD</span>/lua-resty-kafka-0.07/lib/resty/kafka:/usr/local/openresty/lualib/resty/kafka openresty/openresty:1.15.8.2-4-xenial-nosse42</span><br></pre></td></tr></table></figure>
+
+<p><code>stop.sh</code> is to stop <em><strong>rd</strong></em> service and remove docker container</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/usr/bin/env bash</span></span><br><span class="line"></span><br><span class="line">docker <span class="built_in">kill</span> nginx &amp;&amp; docker <span class="built_in">rm</span> nginx</span><br></pre></td></tr></table></figure>
+
+<p><code>nginx.conf</code> is the main nginx + lua configuration file.</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br></pre></td><td class="code"><pre><span class="line">worker_processes  1;</span><br><span class="line">events &#123;</span><br><span class="line">    use epoll;</span><br><span class="line">    worker_connections 1024;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">error_log logs/error.log;</span><br><span class="line"></span><br><span class="line">http &#123;</span><br><span class="line">    include       mime.types;</span><br><span class="line">    default_type  application/octet-stream;</span><br><span class="line"></span><br><span class="line">    server_tokens off;</span><br><span class="line">    more_clear_headers <span class="string">&#x27;Server&#x27;</span>;</span><br><span class="line"></span><br><span class="line">    log_format  main  <span class="string">&#x27;$remote_addr - $remote_user [$time_local] &quot;$request&quot; &#x27;</span></span><br><span class="line">                      <span class="string">&#x27;$status $body_bytes_sent &quot;$http_referer&quot; &#x27;</span></span><br><span class="line">                      <span class="string">&#x27;&quot;$http_user_agent&quot; &quot;$http_x_forwarded_for&quot;&#x27;</span>;</span><br><span class="line"></span><br><span class="line">    access_log  logs/access.log  main;</span><br><span class="line"></span><br><span class="line">    sendfile        on;</span><br><span class="line">    keepalive_timeout  65;</span><br><span class="line"></span><br><span class="line">    lua_package_path <span class="string">&quot;/usr/local/openresty/lualib/resty/kafka/?.lua;;&quot;</span>;</span><br><span class="line">    <span class="comment"># without resolver setting, it will fail in DNS lookup</span></span><br><span class="line">    <span class="comment"># either 8.8.8.8 or using container&#x27;s resolver</span></span><br><span class="line">    <span class="comment"># resolver 8.8.8.8</span></span><br><span class="line">    resolver <span class="built_in">local</span>=on ipv6=off;</span><br><span class="line">    resolver_timeout 5s;</span><br><span class="line"></span><br><span class="line">    server &#123;</span><br><span class="line">        listen       8089;</span><br><span class="line">        server_name  localhost;</span><br><span class="line"></span><br><span class="line">        location / &#123;</span><br><span class="line">            root   html;</span><br><span class="line">            index  index.html index.htm;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Make sure Lua is working</span></span><br><span class="line">        location /hello &#123;</span><br><span class="line">            default_type text/html;</span><br><span class="line">            content_by_lua <span class="string">&#x27;</span></span><br><span class="line"><span class="string">                ngx.say(&quot;Lua: hello world!&quot;)</span></span><br><span class="line"><span class="string">            &#x27;</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment"># The default 1by1 gif</span></span><br><span class="line">        location /empty_gif &#123;</span><br><span class="line">           empty_gif;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        location /rd &#123;</span><br><span class="line">            default_type text/html;</span><br><span class="line">		    content_by_lua <span class="string">&#x27;</span></span><br><span class="line"><span class="string">                local cjson = require &quot;cjson&quot;</span></span><br><span class="line"><span class="string">                local producer = require &quot;resty.kafka.producer&quot;</span></span><br><span class="line"><span class="string">                -- local client = require &quot;resty.kafka.client&quot;</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">                local broker_list = &#123;</span></span><br><span class="line"><span class="string">                    &#123; host = &quot;192.168.0.16&quot;, port = 9092&#125;,</span></span><br><span class="line"><span class="string">                    &#123; host = &quot;192.168.0.17&quot;, port = 9092&#125;,</span></span><br><span class="line"><span class="string">                    &#123; host = &quot;192.168.0.18&quot;, port = 9092&#125;</span></span><br><span class="line"><span class="string">                &#125;</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">                -- Parsing request args</span></span><br><span class="line"><span class="string">                local params_json = &#123;&#125;</span></span><br><span class="line"><span class="string">                local args, err = ngx.req.get_uri_args()</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">                if err == &quot;truncated&quot; then</span></span><br><span class="line"><span class="string">                    -- one can choose to ignore or reject the current request here</span></span><br><span class="line"><span class="string">                end</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">                for key, val in pairs(args) do</span></span><br><span class="line"><span class="string">                    params_json[key] = val</span></span><br><span class="line"><span class="string">                end</span></span><br><span class="line"><span class="string">                ngx.log(ngx.ERR, &quot;url: &quot;, params_json[&quot;d&quot;])</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">                local topic = &quot;redirect-server&quot;</span></span><br><span class="line"><span class="string">                local params_message = cjson.encode(params_json)</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">                -- Set producer async</span></span><br><span class="line"><span class="string">                local bp = producer:new(broker_list, &#123; producer_type = &quot;async&quot; &#125;)</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">                -- The second parameter of send method is to control kafka routing.</span></span><br><span class="line"><span class="string">                -- When it is nill, it will write message to same partition</span></span><br><span class="line"><span class="string">                -- With designated key，it will write message to hash of key of partition</span></span><br><span class="line"><span class="string">                local ok, err = bp:send(topic, nil, params_message)</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">                -- For debugging</span></span><br><span class="line"><span class="string">                ngx.log(ngx.ERR, &quot;Message in json: &quot;, params_message)</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">                if not ok then</span></span><br><span class="line"><span class="string">                    ngx.log(ngx.ERR, &quot;kafka send err:&quot;, err)</span></span><br><span class="line"><span class="string">                    return</span></span><br><span class="line"><span class="string">                end</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">                if params_json[&quot;url&quot;] ~= nil then</span></span><br><span class="line"><span class="string">                    return ngx.redirect(params_json[&quot;url&quot;], 301)</span></span><br><span class="line"><span class="string">                end</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">                return ngx.exec(&quot;/empty_gif&quot;)</span></span><br><span class="line"><span class="string">            &#x27;</span>;</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Testing"><a href="#Testing" class="headerlink" title="Testing"></a>Testing</h3><p>Check you logs&#x2F;error.log file, there should not have any <code>kafka send err:</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">2019/11/06 04:59:44 [error] 6#6: *1 [lua] content_by_lua(nginx.conf:119):25: url: nil, client: 172.17.0.1, server: localhost, request: &quot;GET /rd?a=b&amp;open=false&amp;run=success&amp;yeild=ok&amp;url=http://tw.news.yahoo.com HTTP/1.1&quot;, host: &quot;127.0.0.1:8089&quot;</span><br><span class="line">2019/11/06 04:59:44 [error] 6#6: *1 [lua] content_by_lua(nginx.conf:119):56: Message in json: &#123;&quot;run&quot;:&quot;success&quot;,&quot;yeild&quot;:&quot;ok&quot;,&quot;url&quot;:&quot;http:\/\/tw.news.yahoo.com&quot;,&quot;a&quot;:&quot;b&quot;,&quot;open&quot;:&quot;false&quot;&#125;, client: 172.17.0.1, server: localhost, request: &quot;GET /rd?a=b&amp;open=false&amp;run=success&amp;yeild=ok&amp;url=http://tw.news.yahoo.com HTTP/1.1&quot;, host: &quot;127.0.0.1:8089&quot;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Verify-kafka-message-queue"><a href="#Verify-kafka-message-queue" class="headerlink" title="Verify kafka message queue"></a>Verify kafka message queue</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">kafka-console-consumer --broker-list 192.168.0.16:9092 --topic redirect-server --from-beginning</span><br><span class="line"></span><br><span class="line">kafka-console-producer --broker-list 192.168.0.16:9092 --topic redirect-server</span><br></pre></td></tr></table></figure>
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://xfalcons.github.io/2019/11/08/OpenResty-as-redirect-server-for-logging-sent-to-Kafka/" data-id="cuidN4vdCqKUm_ZPajJwmJOEJ" data-title="OpenResty as redirect server for logging sent to Kafka" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/openresty-logging-kafka/" rel="tag">openresty logging kafka</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2019/11/20/Share-TLS-Certificates-Between-Namespaces-In-Kubernetes/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Share TLS Certificates Between Namespaces In Kubernetes
+        
+      </div>
+    </a>
+  
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/irsa-k3s-zeabur/" rel="tag">irsa k3s zeabur</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/k8s-traefik-tls-secret/" rel="tag">k8s traefik tls secret</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/openresty-logging-kafka/" rel="tag">openresty logging kafka</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/irsa-k3s-zeabur/" style="font-size: 10px;">irsa k3s zeabur</a> <a href="/tags/k8s-traefik-tls-secret/" style="font-size: 10px;">k8s traefik tls secret</a> <a href="/tags/openresty-logging-kafka/" style="font-size: 10px;">openresty logging kafka</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/10/">十月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/11/">十一月 2019</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/10/05/Enable-AWS-IRSA-on-Self-Hosted-K3s-Kubernetes-Clusters/">Enable AWS IRSA on Self Hosted K3s Kubernetes Clusters</a>
+          </li>
+        
+          <li>
+            <a href="/2026/10/05/hello-world/">Hello World</a>
+          </li>
+        
+          <li>
+            <a href="/2019/11/20/Share-TLS-Certificates-Between-Namespaces-In-Kubernetes/">Share TLS Certificates Between Namespaces In Kubernetes</a>
+          </li>
+        
+          <li>
+            <a href="/2019/11/08/OpenResty-as-redirect-server-for-logging-sent-to-Kafka/">OpenResty as redirect server for logging sent to Kafka</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 Kevin Luo<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>
