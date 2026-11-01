@@ -15,8 +15,10 @@ timezone: Asia/Taipei
 
 # URL
 ## Set your site url here. For example, if you use GitHub Page, set url as 'https://username.github.io/project'
+## Due to the use of Vue-router, the default Hexo generated pages and posts' permalink will cause the Vue router fail to find the route, therefore you need to change the Hexo default permalink configuration.
+## Change permalink to /post/:title.html
 url: https://xfalcons.github.io
-permalink: :year/:month/:day/:title/
+permalink: /post/:title.html
 permalink_defaults:
 pretty_urls:
   trailing_index: true # Set to false to remove trailing 'index.html' from permalinks
@@ -47,12 +49,14 @@ relative_link: false
 future: true
 syntax_highlighter: highlight.js
 highlight:
+  enable: false
   line_number: true
   auto_detect: false
   tab_replace: ''
   wrap: true
   hljs: false
 prismjs:
+  enable: false
   preprocess: true
   line_number: true
   tab_replace: ''
@@ -98,7 +102,7 @@ ignore:
 # Extensions
 ## Plugins: https://hexo.io/plugins/
 ## Themes: https://hexo.io/themes/
-theme: landscape
+theme: aurora
 
 # Deployment
 ## Docs: https://hexo.io/docs/one-command-deployment
