@@ -1,0 +1,158 @@
+---
+title: 解讀 OpenAB 生態系：openab、openab-pty、Tailscale 與 OpenAB-Connect 的整合架構
+date: 2026-11-01 19:10:00
+tags: openab tailscale kubernetes mcp terminal
+---
+
+最近在研究 [openabdev](https://github.com/openabdev) 這個組織，發現它用五六個 repo 拼出了一套很有意思的架構：把 AI coding agent 關進雲端沙箱裡跑，你用 Mac 上的 app 透過私有網路連進去操作，必要的時候還能把 Mac 本身的螢幕、鍵盤、滑鼠「借」給遠端的 agent 用。整條路沒有 SaaS control plane，全靠一條 Tailscale tailnet 串起來。
+
+這篇記錄我讀完 [openab](https://github.com/openabdev/openab)、[openab-pty](https://github.com/openabdev/openab-pty)、[openab-computer](https://github.com/openabdev/openab-computer) 與 [connect-site](https://github.com/openabdev/connect-site) 之後整理出的全貌，適合有點技術背景、想理解它怎麼運作的人。
+
+## 三個角色：A、B、C
+
+官方 landing page（[connect.openab.dev](https://connect.openab.dev)）把整個系統分成三個角色，這個框架很好用：
+
+- **A：runtime pod**。跑在 Kubernetes 或 AWS ECS Fargate 裡的容器，裡面有 agent CLI（kiro、Claude Code、Codex 等）和一個 bash shell。這是 agent 工作的地方。
+- **B：OpenAB Computer**。你的 Mac，上面跑一個 open source 的 daemon（`oab-instance-mcp`），負責當 agent 的「手」。
+- **C：Clients**。[OpenAB Connect](https://connect.openab.dev) 這個 Mac app 與 iPhone 上的 OpenAB Remote。你用它觀察狀態、開 terminal、做決策。
+
+三個角色全部掛在同一條 Tailscale tailnet（WireGuard overlay network）上，先看全貌圖：
+
+```mermaid
+flowchart TB
+    subgraph C["C： Clients（觀察與下指令）"]
+        CONNECT["OpenAB Connect（Mac app，閉源）"]
+        REMOTE["OpenAB Remote（iPhone）"]
+        REMOTE -.-> CONNECT
+    end
+    NET(("Tailscale tailnet&lt;br/&gt;WireGuard 加密"))
+    subgraph B["B： 你的 Mac（agent 的手）"]
+        TSERVE["tailscale serve :8444&lt;br/&gt;TLS + 身分驗證"]
+        MCPD["oab-instance-mcp daemon&lt;br/&gt;以 profile 限定的 MCP tools"]
+        TSERVE --- MCPD
+    end
+    subgraph A["A： runtime pod（對外沒有任何 port）"]
+        SCD["tailscale sidecar&lt;br/&gt;userspace tailscaled&lt;br/&gt;唯一的網路身分"]
+        subgraph PTY["openab-pty 容器（uid 1000）"]
+            ADMIN["admin plane&lt;br/&gt;建立、續約、刪除 session"]
+            ATTACH["attach plane&lt;br/&gt;WS /pty/session"]
+            TOOLS["tools plane&lt;br/&gt;MCP 轉發"]
+            SHELL["bash shell + agent CLI"]
+        end
+        OAB["openab broker（選配）&lt;br/&gt;Discord bot 驅動 ACP agent"]
+        WS[("共享 /workspace")]
+        SCD --> ADMIN
+        SCD --> ATTACH
+        SCD --> TOOLS
+        SHELL <--> WS
+        OAB <--> WS
+    end
+    CONNECT --- NET
+    NET --- SCD
+    NET --- TSERVE
+    MCPD -->|"reverse attach WS"| SCD
+    SHELL -->|"loopback HTTP"| TOOLS
+```
+
+幾個一看就懂的重點。Pod 對外完全沒有開 port，唯一的入口是 tailscale sidecar。所有的連線方向都是「別人主動連進 pod」，pod 自己不會主動連出去。Mac 上的 daemon 也是「主動撥進去」pod，而不是被連。
+
+## openab：把聊天軟體變成 agent 遙控器
+
+[openab](https://github.com/openabdev/openab) 是整個生態系最早的核心，一個用 Rust 寫的薄 broker。它做的事本質上很簡單：你在 Discord 或 Slack 上 @ 它，它把訊息轉給容器裡跑的 agent CLI，再把 agent 的回覆 stream 回聊天區。中間用的是 ACP（Agent Client Protocol），也就是 JSON-RPC over stdio。
+
+它的內部構造是「adapters 收訊、dispatcher 排隊、session pool 管理 agent process」：
+
+| 元件 | 作用 |
+| --- | --- |
+| `ChatAdapter` | Discord、Slack 等 platform 的抽象介面 |
+| `Dispatcher` | 按 thread 分批訊息，同一個 thread 同時只有一個 ACP turn |
+| `SessionPool` | 一個 thread 對應一個 agent CLI child process |
+| `AcpConnection` | 管理 agent process 的 stdin/stdout JSON-RPC |
+
+有個細節值得注意。因為聊天平台上沒有人可以即時 approve permission request，broker 對 agent 的 `session/request_permission` 是自動核准的（挑最寬鬆的選項）。它的安全模型是環境式的：agent 的環境變數被清空重組，Discord bot token 之類的東西永遠不會進到 agent process 裡。
+
+## openab-pty：被關進沙箱的 terminal
+
+[openab-pty](https://github.com/openabdev/openab-pty) 解決另一個問題。agent 用聊天遙控難免有極限，有時你就是想要一個 shell 自己上去看。openab-pty 給你的就是那個 shell，但開在一個鎖很緊的容器裡：
+
+- shell 以 uid 1000 執行，沒有 sudo
+- root filesystem 唯讀，workspace 是 ephemeral 的
+- 沒有 service account token、沒有 host credential
+- 連線走 tailnet，用的是不帶 signing key 的 per-session token
+
+它跟 openab 的關係最有意思的地方在 image 繼承：`openab-pty` 的 Dockerfile 直接 `FROM ghcr.io/openabdev/openab`（digest-pinned）。也就是說你 attach 進去的 shell，跟 Discord bot 背後的 agent 用的是同一個 image、同一套工具鏈。agent 做到一半的東西，你直接 attach 進去原地接手，不用在別的機器上重現環境。兩者是獨立的，沒有誰依賴誰，只是 image 同源。
+
+Runtime 內部分成三個 plane，全部只 bind 在 `127.0.0.1`：
+
+| Plane | Endpoint | 用什麼 credential |
+| --- | --- | --- |
+| admin plane | `POST /admin/sessions` 等管理 API | 長效 admin credential（運算子持有） |
+| attach plane | `WS /pty/{name}` 連進 terminal | admin plane 簽發的短效 per-session token |
+| tools plane | `WS /tools/attach/{name}` 加 loopback MCP | per-session secret（reverse attach 用） |
+
+Credential 設計很乾淨。Admin credential 只存 hash（`sha256:` verifier），驗證用 constant-time compare。Session token 是 256-bit 隨機 hex，runtime 只留它的 hash，整個系統裡不存在 signing key。連進 shell 的人拿不到 admin credential，所以一個被攻陷的 shell 也管理不了別的 session。
+
+## Tailscale：唯一的門
+
+Pod 的部署形態是「一個 pod 兩個容器，共用同一個 network namespace」。tailscale sidecar 用 userspace 模式跑（`--tun=userspace-networking`），不需要 `NET_ADMIN`，也不需要 TUN device。它是 pod 裡唯一有網路身分的東西，inbound 的 tailnet TCP 它直接 forward 到 loopback 的各個 port。
+
+幾個我覺得設計得很講究的地方：
+
+- Pod manifest 裡連 `ports:` 都沒有，連 containerPort 都不宣告，Kubernetes Service 和 Ingress 一概不用。要連線，就只能走 tailnet。
+- Tailscale auth key 必須是 reusable 加 ephemeral。ephemeral 的效果是 pod 被刪掉時，那個 node 自動從 tailnet 消失，不會累積一堆死節點。
+- Pod 這端的連線靠 WireGuard 加密，runtime 不持有任何 TLS key。Mac 那一端倒是反過來，`tailscale serve` 會 terminate TLS 並注入 `Tailscale-User-Login` 身分 header，`oab-instance-mcp` 拿這個 header 加 bearer token 做 AND 驗證。
+
+## OpenAB-Connect：Mac 上的指揮台
+
+OpenAB Connect 是 Mac App Store 上的閉源 app（macOS 13 以上，sandboxed）。原碼不在任何 repo 裡，landing page 特地放在獨立的 connect-site repo，就是要把 MIT 授權的 openab-pty 跟商業 app 的邊界切乾淨。不過它的行為規格完全公開，就是 openab-pty repo 裡的 `runtime/CLIENT-CONTRACT.md`，任何人都可以照合約寫一個自己的 client。
+
+Connect 實際上做三件事：
+
+1. **部署**。輸入 Tailscale auth key 和 cluster 憑證，它幫你建 namespace、secret、volume，apply 一個單 replica 的 StatefulSet（新版做法，pod 被驅逐後會用同樣的位址重新加入 tailnet）。
+1. **Attach**。Admin credential 存在 macOS Keychain（service 是 `dev.openab.connect`）。開 terminal 時先 `POST /admin/sessions` 換 session token，再開 WebSocket attach 進去，斷線可以從 byte offset 續傳 scrollback。
+1. **Lend**。把你的 Mac 借給某個 session，下一節的重點。
+
+## Reverse Attach：把 Mac 借給 agent
+
+這是我覺得整套系統最漂亮的一步。情境是 agent 在雲端沙箱裡跑，但有些工作需要真實的 Mac：跑 Xcode、操作 Simulator、截圖看 UI。傳統做法是把 SSH key 或 credential 塞給 agent，讓它 主動連出來。OpenAB 反過來，方向整個倒轉：
+
+```mermaid
+sequenceDiagram
+    participant Conn as OpenAB Connect
+    participant Mac as oab-instance-mcp（Mac）
+    participant Pod as openab-pty（Pod）
+    participant CLI as agent CLI（session 內）
+    Conn->>Mac: POST /attach（profile、TTL、admin credential）
+    Mac->>Pod: POST /admin/sessions/s/tools-attach
+    Pod-->>Mac: 201 附 per-session secret（credential 用完即棄）
+    Mac->>Pod: WS /tools/attach/s（主動撥入）
+    Pod->>Mac: MCP initialize（Pod 是 MCP client）
+    CLI->>Pod: loopback 呼叫 OPENAB_TOOLS_MCP_URL
+    Pod->>Mac: 轉發 tools/call（改寫 JSON-RPC id）
+    Mac-->>Pod: 執行 screenshot、mouse、exec 等工具
+    Pod-->>CLI: 回傳 tool result
+```
+
+流程是你在 Connect 上決定「把這台 Mac 借給那個 session、用什麼 profile、借多久」（1/2/4/12/24 小時）。Mac 上的 `oab-instance-mcp` 拿著 admin credential 去 pod 的 admin plane 換一個一次性的 attach secret，credential 用完即丟不落地。然後 Mac 主動撥 WebSocket 到 pod 的 tools plane，pod 這邊對 Mac 扮演 MCP client，對 session 裡的 agent CLI 則扮演 MCP server，中間做 JSON-RPC id 的改寫轉發。Agent 眼中只是多了一個 loopback 的 MCP server，環境變數 `OPENAB_TOOLS_MCP_URL` 指過去而已。
+
+三種 credential 分屬三方、互不共用：運算子的 admin credential、Mac 的一次性 attach secret、CLI 的 per-session loopback key。Pod 全程只存 hash，不存明碼。
+
+借出的權限用 profile 控制。`observe` 只有 `sys_info` 和 `screenshot`，是唯一被當成安全邊界認真實作的等級。`desktop` 多了 mouse、key、osascript，文件明說這不是安全邊界，因為那些工具本質上等於 shell。隨時可以 revoke，Mac 會收到 close code 4010 斷線。
+
+另外還有個 [openab-sb](https://github.com/openabdev/openab-sb) switchboard，給只能撥號出去（NAT 後面）的電腦當中繼，概念相同就不再展開。至於 [studio](https://github.com/openabdev/studio) 是另一個世界的產品，管理的是 Discord bot fleet 的 ECS 部署，跟 Connect 這條線沒有整合，不要搞混。
+
+## 我的三個觀察
+
+**連線方向全部倒轉，是刻意的不對稱。** Pod 不主動連任何地方、不開 port、不持有 TLS key。Mac 主動撥入 pod。Credential 永遠是「驗證方存 hash、持有方單次交付」。整個 trust model 建立在「session 裡的 shell 什麼 credential 都不該有」這條不變量上，repo 裡的 adversary test 甚至明確測「session shell 連得到 admin listener，但一定拿到 401」，而不是假裝連不到。
+
+**Security boundary 說清楚不裝懂。** `observe` 是邊界、`desktop` 不是、`sandbox` profile 直接拒絕（回 400）。文件跟測試一致地把「哪些東西是安全保證、哪些只是方便」標出來，這比把所有功能都宣稱 secure 的專案誠實得多。
+
+**合約先於實作。** 閉源的 Connect 沒有造成 lock-in 的疑慮，因為 client 合約、wire format、close code 語意全部在 openab-pty repo 裡公開，還附了完整的 client 實作規格。Connect 只是第一個實作，理論上你今天就可以照 `CLIENT-CONTRACT.md` 寫一個自己的。
+
+## 相關連結
+
+- [openabdev/openab](https://github.com/openabdev/openab)：chat-to-agent broker
+- [openabdev/openab-pty](https://github.com/openabdev/openab-pty)：沙箱 terminal runtime（`CLIENT-CONTRACT.md` 在 `runtime/` 目錄下）
+- [openabdev/openab-computer](https://github.com/openabdev/openab-computer)：Mac 端 `oab-instance-mcp` daemon
+- [openabdev/connect-site](https://github.com/openabdev/connect-site)：OpenAB Connect landing page 與 release notes
+- [connect.openab.dev](https://connect.openab.dev)：OpenAB Connect 官網

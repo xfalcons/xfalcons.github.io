@@ -108,3 +108,10 @@ theme: aurora
 ## Docs: https://hexo.io/docs/one-command-deployment
 deploy:
   type: ''
+
+# mermaid https://github.com/knsv/mermaid
+# https://github.com/webappdevelp/hexo-filter-mermaid-diagrams
+mermaid:
+  enable: true
+  # Available themes: default | dark | forest | neutral
+  theme: forest
